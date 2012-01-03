@@ -5,6 +5,7 @@ and searchable lists.
 
 ## Dependencies
 
+* [jQuery] (http://jquery.com)
 * [mustache.js] (http://github.com/janl/mustache.js)
 * [underscore.js] (http://documentcloud.github.com/underscore)
 
@@ -15,8 +16,9 @@ livelist.js works well with Rails 3.1, see the [livelist-rails]
 
 ## Setup
 
-# include mustache.js, underscore.js and livelist.js on your page
-# in your application's javascript/coffeescript file, create a livelist:
+include mustache.js, underscore.js and livelist.js on your page
+
+in your application's javascript/coffeescript file, create a livelist:
 
 ### javascript
 
@@ -116,10 +118,8 @@ property to the list configuration as follows:
 
 ## Todos
 
-Calculate next and previous pages based on total_pages and
+* Calculate next and previous pages based on total_pages and
 current_page in the JSON response.
-
-Calculate slug and value for filter options from the option name if
+* Calculate slug and value for filter options from the option name if
 either aren't provided.
-
-Make template engine plugable (hogan.js, etc. rather than mustache)
+* Make template engine plugable (hogan.js, etc. rather than mustache)
