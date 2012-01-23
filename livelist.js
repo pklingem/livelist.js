@@ -1,30 +1,28 @@
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = Object.prototype.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
-
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+    for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
+    function ctor() { this.constructor = child; }
+    ctor.prototype = parent.prototype;
+    child.prototype = new ctor;
+    child.__super__ = parent.prototype;
+    return child;
+  };
   window.Utilities = (function() {
-
     function Utilities() {
       this.setOptions = __bind(this.setOptions, this);
     }
-
     Utilities.prototype.setOptions = function(options, context) {
-      var _this = this;
-      if (context == null) context = this;
-      return _.each(options, function(value, option) {
+      if (context == null) {
+        context = this;
+      }
+      return _.each(options, __bind(function(value, option) {
         return context[option] = value;
-      });
+      }, this));
     };
-
     return Utilities;
-
   })();
-
-  window.LiveList = (function(_super) {
-
-    __extends(LiveList, _super);
-
+  window.LiveList = (function() {
+    __extends(LiveList, Utilities);
     function LiveList(options) {
       this.globalOptions.listSelector = options.list.renderTo;
       this.globalOptions.eventName = "livelist:" + options.global.resourceName;
@@ -35,24 +33,19 @@
       this.pagination = new Pagination(this.globalOptions, options.pagination);
       this.list = new List(this.search, this.filters, this.pagination, this.globalOptions, options.list);
     }
-
     LiveList.prototype.globalOptions = {
       data: null,
       resourceName: 'items',
       resourceNameSingular: 'item'
     };
-
     return LiveList;
-
-  })(Utilities);
-
-  window.List = (function(_super) {
-
-    __extends(List, _super);
-
+  })();
+  window.List = (function() {
+    __extends(List, Utilities);
     function List(search, filters, pagination, globalOptions, options) {
-      var _this = this;
-      if (options == null) options = {};
+      if (options == null) {
+        options = {};
+      }
       this.renderIndex = __bind(this.renderIndex, this);
       this.removeFetchingIndication = __bind(this.removeFetchingIndication, this);
       this.displayFetchingIndication = __bind(this.displayFetchingIndication, this);
@@ -66,25 +59,22 @@
       this.listItemTemplate = '<li>{{id}}</li>';
       this.fetchingIndicationClass = 'updating';
       this.setOptions(options);
-      $(this.renderTo).bind(this.eventName, function(event, params) {
-        return _this.fetch({
+      $(this.renderTo).bind(this.eventName, __bind(function(event, params) {
+        return this.fetch({
           filterPresets: null,
           page: params != null ? params.page : void 0
         });
-      });
+      }, this));
       this.fetch({
         filterPresets: this.filters.presets
       });
     }
-
     List.prototype.displayFetchingIndication = function() {
       return $(this.renderTo).addClass(this.fetchingIndicationClass);
     };
-
     List.prototype.removeFetchingIndication = function() {
       return $(this.renderTo).removeClass(this.fetchingIndicationClass);
     };
-
     List.prototype.renderIndex = function(data, textStatus, jqXHR) {
       this.data = data;
       this.render();
@@ -92,11 +82,11 @@
       this.filters.filters = _.pluck(this.data.filters, 'filter_slug');
       return this.filters.render(this.data);
     };
-
     List.prototype.fetch = function(options) {
-      var params, searchTerm, _ref,
-        _this = this;
-      if (this.fetchRequest) this.fetchRequest.abort();
+      var params, searchTerm, _ref;
+      if (this.fetchRequest) {
+        this.fetchRequest.abort();
+      }
       searchTerm = this.search.searchTerm();
       params = {
         filters: {}
@@ -104,12 +94,16 @@
       if (((_ref = options.filterPresets) != null ? _ref.length : void 0) > 0) {
         params.filters = options.filterPresets;
       } else {
-        _.each(this.filters.filters, function(filter) {
-          return params.filters[filter] = _this.filters.filterSelections(filter);
-        });
+        _.each(this.filters.filters, __bind(function(filter) {
+          return params.filters[filter] = this.filters.filterSelections(filter);
+        }, this));
       }
-      if (searchTerm) params.q = searchTerm;
-      if (options.page) params.page = options.page;
+      if (searchTerm) {
+        params.q = searchTerm;
+      }
+      if (options.page) {
+        params.page = options.page;
+      }
       return this.fetchRequest = $.ajax({
         url: this.urlPrefix,
         dataType: 'json',
@@ -119,7 +113,6 @@
         success: this.renderIndex
       });
     };
-
     List.prototype.render = function() {
       var partials;
       partials = {};
@@ -127,57 +120,46 @@
       $(this.renderTo).html(Mustache.to_html(this.listTemplate, this.data, partials));
       return this.removeFetchingIndication();
     };
-
     return List;
-
-  })(Utilities);
-
-  window.Filters = (function(_super) {
-
-    __extends(Filters, _super);
-
+  })();
+  window.LiveList.version = '0.0.1';
+  window.Filters = (function() {
+    __extends(Filters, Utilities);
     function Filters(globalOptions, options) {
-      var _this = this;
-      if (options == null) options = {};
+      if (options == null) {
+        options = {};
+      }
       this.handleAdvancedOptionsClick = __bind(this.handleAdvancedOptionsClick, this);
       this.setOptions(globalOptions);
       this.filters = options.presets ? _.keys(options.presets) : [];
       this.setOptions(options);
-      $('input.filter_option', this.renderTo).live('change', function() {
-        return $(_this.listSelector).trigger(_this.eventName);
-      });
+      $('input.filter_option', this.renderTo).live('change', __bind(function() {
+        return $(this.listSelector).trigger(this.eventName);
+      }, this));
       $(this.advancedOptionsToggleSelector).click(this.handleAdvancedOptionsClick);
     }
-
     Filters.prototype.filtersTemplate = '{{#filters}}\n<div class=\'filter\'>\n  <h3>\n    {{name}}\n  </h3>\n  <ul id=\'{{filter_slug}}_filter_options\'>\n    {{#options}}\n    <label>\n      <li>\n        <input {{#selected}}checked=\'checked\'{{/selected}}\n               class=\'left filter_option\'\n               id=\'filter_{{slug}}\'\n               name=\'filters[]\'\n               type=\'checkbox\'\n               value=\'{{value}}\' />\n        <div class=\'left filter_name\'>{{name}}</div>\n        <div class=\'right filter_count\'>{{count}}</div>\n        <div class=\'clear\'></div>\n      </li>\n    </label>\n    {{/options}}\n  </ul>\n</div>\n{{/filters}}';
-
     Filters.prototype.filterValues = function(filter) {
       return _.pluck($("." + filter + "_filter_input"), 'value');
     };
-
     Filters.prototype.filterSelections = function(filter) {
       return _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
     };
-
     Filters.prototype.render = function(data) {
       return $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
     };
-
     Filters.prototype.handleAdvancedOptionsClick = function(event) {
       event.preventDefault();
       return $(this.renderTo).slideToggle();
     };
-
     return Filters;
-
-  })(Utilities);
-
-  window.Pagination = (function(_super) {
-
-    __extends(Pagination, _super);
-
+  })();
+  window.Pagination = (function() {
+    __extends(Pagination, Utilities);
     function Pagination(globalOptions, options) {
-      if (options == null) options = {};
+      if (options == null) {
+        options = {};
+      }
       this.handlePaginationLinkClick = __bind(this.handlePaginationLinkClick, this);
       this.pagination = null;
       this.maxPages = 30;
@@ -186,9 +168,7 @@
       this.setOptions(options);
       $("" + this.renderTo + " a").live('click', this.handlePaginationLinkClick);
     }
-
     Pagination.prototype.paginationTemplate = '{{#isEmpty}}\n  {{{emptyListMessage}}}\n{{/isEmpty}}\n{{^isEmpty}}\n{{#previousPage}}\n  <a href=\'{{urlPrefix}}?page={{previousPage}}\' data-page=\'{{previousPage}}\'>← Previous</a>\n{{/previousPage}}\n{{^previousPage}}\n  <span>← Previous</span>\n{{/previousPage}}\n{{#pages}}\n  {{#currentPage}}\n    <span>{{page}}</span>\n  {{/currentPage}}\n  {{^currentPage}}\n    <a href=\'{{urlPrefix}}?page={{page}}\' data-page=\'{{page}}\'>{{page}}</a>\n  {{/currentPage}}\n{{/pages}}\n{{#nextPage}}\n  <a href=\'{{urlPrefix}}?page={{nextPage}}\' data-page=\'{{nextPage}}\'>Next →</a>\n{{/nextPage}}\n{{^nextPage}}\n  <span>Next →</span>\n{{/nextPage}}\n{{/isEmpty}}';
-
     Pagination.prototype.pagesJSON = function(currentPage, totalPages) {
       var firstPage, groupSize, lastPage, previousPage, _i, _results;
       groupSize = this.maxPages / 2;
@@ -199,7 +179,7 @@
         _results = [];
         for (var _i = firstPage; firstPage <= lastPage ? _i <= lastPage : _i >= lastPage; firstPage <= lastPage ? _i++ : _i--){ _results.push(_i); }
         return _results;
-      }).apply(this), function(page) {
+      }).apply(this, arguments), function(page) {
         return {
           page: page,
           currentPage: function() {
@@ -208,7 +188,6 @@
         };
       });
     };
-
     Pagination.prototype.paginationJSON = function(pagination) {
       return {
         isEmpty: pagination.total_pages === 0,
@@ -220,38 +199,31 @@
         pages: this.pagesJSON(pagination.current_page, pagination.total_pages)
       };
     };
-
     Pagination.prototype.render = function(data) {
       this.pagination = this.paginationJSON(data.pagination);
       return $(this.renderTo).html(Mustache.to_html(this.paginationTemplate, this.pagination));
     };
-
     Pagination.prototype.handlePaginationLinkClick = function(event) {
       event.preventDefault();
       return $(this.listSelector).trigger(this.eventName, {
         page: $(event.target).data('page')
       });
     };
-
     return Pagination;
-
-  })(Utilities);
-
-  window.Search = (function(_super) {
-
-    __extends(Search, _super);
-
+  })();
+  window.Search = (function() {
+    __extends(Search, Utilities);
     function Search(globalOptions, options) {
-      var _this = this;
-      if (options == null) options = {};
+      if (options == null) {
+        options = {};
+      }
       this.handleSearchFormSubmit = __bind(this.handleSearchFormSubmit, this);
       this.setOptions(globalOptions);
       this.setOptions(options);
-      $(this.formSelector).submit(function(event) {
-        return _this.handleSearchFormSubmit(event);
-      });
+      $(this.formSelector).submit(__bind(function(event) {
+        return this.handleSearchFormSubmit(event);
+      }, this));
     }
-
     Search.prototype.searchTerm = function() {
       var q;
       q = $(this.searchTextInputSelector).val();
@@ -261,14 +233,10 @@
         return q;
       }
     };
-
     Search.prototype.handleSearchFormSubmit = function(event) {
       event.preventDefault();
       return $(this.listSelector).trigger(this.eventName);
     };
-
     return Search;
-
-  })(Utilities);
-
+  })();
 }).call(this);

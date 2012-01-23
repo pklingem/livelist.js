@@ -72,6 +72,8 @@ class window.List extends Utilities
     $(@renderTo).html( Mustache.to_html(@listTemplate, @data, partials) )
     @removeFetchingIndication()
 
+window.LiveList.version = '0.0.1'
+
 class window.Filters extends Utilities
   constructor: (globalOptions, options = {}) ->
     @setOptions(globalOptions)
