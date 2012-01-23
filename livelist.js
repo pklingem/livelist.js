@@ -61,12 +61,12 @@
       this.setOptions(options);
       $(this.renderTo).bind(this.eventName, __bind(function(event, params) {
         return this.fetch({
-          filterPresets: null,
+          presets: null,
           page: params != null ? params.page : void 0
         });
       }, this));
       this.fetch({
-        filterPresets: this.filters.presets
+        presets: this.filters.presets
       });
     }
     List.prototype.displayFetchingIndication = function() {
@@ -82,8 +82,16 @@
       this.filters.filters = _.pluck(this.data.filters, 'filter_slug');
       return this.filters.render(this.data);
     };
+    List.prototype.selections = function() {
+      var filters;
+      filters = {};
+      _.each(this.filters.filters, __bind(function(filter) {
+        return filters[filter] = this.filters.filterSelections(filter);
+      }, this));
+      return filters;
+    };
     List.prototype.fetch = function(options) {
-      var params, searchTerm, _ref;
+      var params, searchTerm;
       if (this.fetchRequest) {
         this.fetchRequest.abort();
       }
@@ -91,12 +99,10 @@
       params = {
         filters: {}
       };
-      if (((_ref = options.filterPresets) != null ? _ref.length : void 0) > 0) {
-        params.filters = options.filterPresets;
+      if (jQuery.isEmptyObject(options.presets)) {
+        params.filters = this.selections();
       } else {
-        _.each(this.filters.filters, __bind(function(filter) {
-          return params.filters[filter] = this.filters.filterSelections(filter);
-        }, this));
+        params.filters = options.presets;
       }
       if (searchTerm) {
         params.q = searchTerm;
@@ -122,7 +128,7 @@
     };
     return List;
   })();
-  window.LiveList.version = '0.0.1';
+  window.LiveList.version = '0.0.2';
   window.Filters = (function() {
     __extends(Filters, Utilities);
     function Filters(globalOptions, options) {
@@ -145,8 +151,18 @@
     Filters.prototype.filterSelections = function(filter) {
       return _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
     };
+    Filters.prototype.noFiltersSelected = function(data) {
+      return _.all(data.filters, function(filter) {
+        return _.all(filter.options, function(option) {
+          return !option.selected;
+        });
+      });
+    };
     Filters.prototype.render = function(data) {
-      return $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
+      $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
+      if (this.noFiltersSelected(data) && data.patients.length > 0) {
+        return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
+      }
     };
     Filters.prototype.handleAdvancedOptionsClick = function(event) {
       event.preventDefault();
