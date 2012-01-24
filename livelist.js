@@ -1,28 +1,30 @@
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
-    for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
-    function ctor() { this.constructor = child; }
-    ctor.prototype = parent.prototype;
-    child.prototype = new ctor;
-    child.__super__ = parent.prototype;
-    return child;
-  };
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
   window.Utilities = (function() {
+
     function Utilities() {
       this.setOptions = __bind(this.setOptions, this);
     }
+
     Utilities.prototype.setOptions = function(options, context) {
-      if (context == null) {
-        context = this;
-      }
-      return _.each(options, __bind(function(value, option) {
+      var _this = this;
+      if (context == null) context = this;
+      return _.each(options, function(value, option) {
         return context[option] = value;
-      }, this));
+      });
     };
+
     return Utilities;
+
   })();
-  window.LiveList = (function() {
-    __extends(LiveList, Utilities);
+
+  window.LiveList = (function(_super) {
+
+    __extends(LiveList, _super);
+
     function LiveList(options) {
       this.globalOptions.listSelector = options.list.renderTo;
       this.globalOptions.eventName = "livelist:" + options.global.resourceName;
@@ -33,19 +35,25 @@
       this.pagination = new Pagination(this.globalOptions, options.pagination);
       this.list = new List(this.search, this.filters, this.pagination, this.globalOptions, options.list);
     }
+
     LiveList.prototype.globalOptions = {
       data: null,
       resourceName: 'items',
       resourceNameSingular: 'item'
     };
+
     return LiveList;
-  })();
-  window.List = (function() {
-    __extends(List, Utilities);
+
+  })(Utilities);
+
+  window.List = (function(_super) {
+
+    __extends(List, _super);
+
     function List(search, filters, pagination, globalOptions, options) {
-      if (options == null) {
-        options = {};
-      }
+      var cookie, presets,
+        _this = this;
+      if (options == null) options = {};
       this.renderIndex = __bind(this.renderIndex, this);
       this.removeFetchingIndication = __bind(this.removeFetchingIndication, this);
       this.displayFetchingIndication = __bind(this.displayFetchingIndication, this);
@@ -59,22 +67,31 @@
       this.listItemTemplate = '<li>{{id}}</li>';
       this.fetchingIndicationClass = 'updating';
       this.setOptions(options);
-      $(this.renderTo).bind(this.eventName, __bind(function(event, params) {
-        return this.fetch({
+      $(this.renderTo).bind(this.eventName, function(event, params) {
+        return _this.fetch({
           presets: null,
           page: params != null ? params.page : void 0
         });
-      }, this));
+      });
+      if (this.filters.useCookies) cookie = jQuery.cookie(this.filters.cookieName);
+      if (this.filters.useCookies && cookie) {
+        presets = JSON.parse(cookie);
+      } else {
+        presets = this.filters.presets;
+      }
       this.fetch({
-        presets: this.filters.presets
+        presets: presets
       });
     }
+
     List.prototype.displayFetchingIndication = function() {
       return $(this.renderTo).addClass(this.fetchingIndicationClass);
     };
+
     List.prototype.removeFetchingIndication = function() {
       return $(this.renderTo).removeClass(this.fetchingIndicationClass);
     };
+
     List.prototype.renderIndex = function(data, textStatus, jqXHR) {
       this.data = data;
       this.render();
@@ -82,34 +99,34 @@
       this.filters.filters = _.pluck(this.data.filters, 'filter_slug');
       return this.filters.render(this.data);
     };
+
     List.prototype.selections = function() {
-      var filters;
+      var filters,
+        _this = this;
       filters = {};
-      _.each(this.filters.filters, __bind(function(filter) {
-        return filters[filter] = this.filters.filterSelections(filter);
-      }, this));
+      _.each(this.filters.filters, function(filter) {
+        return filters[filter] = _this.filters.filterSelections(filter);
+      });
       return filters;
     };
+
     List.prototype.fetch = function(options) {
       var params, searchTerm;
-      if (this.fetchRequest) {
-        this.fetchRequest.abort();
-      }
+      if (this.fetchRequest) this.fetchRequest.abort();
       searchTerm = this.search.searchTerm();
       params = {
         filters: {}
       };
       if (jQuery.isEmptyObject(options.presets)) {
         params.filters = this.selections();
+        if (!jQuery.isEmptyObject(this.selections())) {
+          jQuery.cookie(this.filters.cookieName, JSON.stringify(this.selections()));
+        }
       } else {
         params.filters = options.presets;
       }
-      if (searchTerm) {
-        params.q = searchTerm;
-      }
-      if (options.page) {
-        params.page = options.page;
-      }
+      if (searchTerm) params.q = searchTerm;
+      if (options.page) params.page = options.page;
       return this.fetchRequest = $.ajax({
         url: this.urlPrefix,
         dataType: 'json',
@@ -119,6 +136,7 @@
         success: this.renderIndex
       });
     };
+
     List.prototype.render = function() {
       var partials;
       partials = {};
@@ -126,31 +144,43 @@
       $(this.renderTo).html(Mustache.to_html(this.listTemplate, this.data, partials));
       return this.removeFetchingIndication();
     };
+
     return List;
-  })();
-  window.LiveList.version = '0.0.2';
-  window.Filters = (function() {
-    __extends(Filters, Utilities);
+
+  })(Utilities);
+
+  window.LiveList.version = '0.0.3';
+
+  window.Filters = (function(_super) {
+
+    __extends(Filters, _super);
+
     function Filters(globalOptions, options) {
-      if (options == null) {
-        options = {};
-      }
+      var _this = this;
+      if (options == null) options = {};
       this.handleAdvancedOptionsClick = __bind(this.handleAdvancedOptionsClick, this);
       this.setOptions(globalOptions);
       this.filters = options.presets ? _.keys(options.presets) : [];
+      if (!this.filters.cookieName) {
+        this.filters.cookieName = 'livelist_filter_presets';
+      }
       this.setOptions(options);
-      $('input.filter_option', this.renderTo).live('change', __bind(function() {
-        return $(this.listSelector).trigger(this.eventName);
-      }, this));
+      $('input.filter_option', this.renderTo).live('change', function() {
+        return $(_this.listSelector).trigger(_this.eventName);
+      });
       $(this.advancedOptionsToggleSelector).click(this.handleAdvancedOptionsClick);
     }
+
     Filters.prototype.filtersTemplate = '{{#filters}}\n<div class=\'filter\'>\n  <h3>\n    {{name}}\n  </h3>\n  <ul id=\'{{filter_slug}}_filter_options\'>\n    {{#options}}\n    <label>\n      <li>\n        <input {{#selected}}checked=\'checked\'{{/selected}}\n               class=\'left filter_option\'\n               id=\'filter_{{slug}}\'\n               name=\'filters[]\'\n               type=\'checkbox\'\n               value=\'{{value}}\' />\n        <div class=\'left filter_name\'>{{name}}</div>\n        <div class=\'right filter_count\'>{{count}}</div>\n        <div class=\'clear\'></div>\n      </li>\n    </label>\n    {{/options}}\n  </ul>\n</div>\n{{/filters}}';
+
     Filters.prototype.filterValues = function(filter) {
       return _.pluck($("." + filter + "_filter_input"), 'value');
     };
+
     Filters.prototype.filterSelections = function(filter) {
       return _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
     };
+
     Filters.prototype.noFiltersSelected = function(data) {
       return _.all(data.filters, function(filter) {
         return _.all(filter.options, function(option) {
@@ -158,24 +188,29 @@
         });
       });
     };
+
     Filters.prototype.render = function(data) {
       $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
       if (this.noFiltersSelected(data) && data.patients.length > 0) {
         return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
       }
     };
+
     Filters.prototype.handleAdvancedOptionsClick = function(event) {
       event.preventDefault();
       return $(this.renderTo).slideToggle();
     };
+
     return Filters;
-  })();
-  window.Pagination = (function() {
-    __extends(Pagination, Utilities);
+
+  })(Utilities);
+
+  window.Pagination = (function(_super) {
+
+    __extends(Pagination, _super);
+
     function Pagination(globalOptions, options) {
-      if (options == null) {
-        options = {};
-      }
+      if (options == null) options = {};
       this.handlePaginationLinkClick = __bind(this.handlePaginationLinkClick, this);
       this.pagination = null;
       this.maxPages = 30;
@@ -184,7 +219,9 @@
       this.setOptions(options);
       $("" + this.renderTo + " a").live('click', this.handlePaginationLinkClick);
     }
+
     Pagination.prototype.paginationTemplate = '{{#isEmpty}}\n  {{{emptyListMessage}}}\n{{/isEmpty}}\n{{^isEmpty}}\n{{#previousPage}}\n  <a href=\'{{urlPrefix}}?page={{previousPage}}\' data-page=\'{{previousPage}}\'>← Previous</a>\n{{/previousPage}}\n{{^previousPage}}\n  <span>← Previous</span>\n{{/previousPage}}\n{{#pages}}\n  {{#currentPage}}\n    <span>{{page}}</span>\n  {{/currentPage}}\n  {{^currentPage}}\n    <a href=\'{{urlPrefix}}?page={{page}}\' data-page=\'{{page}}\'>{{page}}</a>\n  {{/currentPage}}\n{{/pages}}\n{{#nextPage}}\n  <a href=\'{{urlPrefix}}?page={{nextPage}}\' data-page=\'{{nextPage}}\'>Next →</a>\n{{/nextPage}}\n{{^nextPage}}\n  <span>Next →</span>\n{{/nextPage}}\n{{/isEmpty}}';
+
     Pagination.prototype.pagesJSON = function(currentPage, totalPages) {
       var firstPage, groupSize, lastPage, previousPage, _i, _results;
       groupSize = this.maxPages / 2;
@@ -195,7 +232,7 @@
         _results = [];
         for (var _i = firstPage; firstPage <= lastPage ? _i <= lastPage : _i >= lastPage; firstPage <= lastPage ? _i++ : _i--){ _results.push(_i); }
         return _results;
-      }).apply(this, arguments), function(page) {
+      }).apply(this), function(page) {
         return {
           page: page,
           currentPage: function() {
@@ -204,6 +241,7 @@
         };
       });
     };
+
     Pagination.prototype.paginationJSON = function(pagination) {
       return {
         isEmpty: pagination.total_pages === 0,
@@ -215,31 +253,38 @@
         pages: this.pagesJSON(pagination.current_page, pagination.total_pages)
       };
     };
+
     Pagination.prototype.render = function(data) {
       this.pagination = this.paginationJSON(data.pagination);
       return $(this.renderTo).html(Mustache.to_html(this.paginationTemplate, this.pagination));
     };
+
     Pagination.prototype.handlePaginationLinkClick = function(event) {
       event.preventDefault();
       return $(this.listSelector).trigger(this.eventName, {
         page: $(event.target).data('page')
       });
     };
+
     return Pagination;
-  })();
-  window.Search = (function() {
-    __extends(Search, Utilities);
+
+  })(Utilities);
+
+  window.Search = (function(_super) {
+
+    __extends(Search, _super);
+
     function Search(globalOptions, options) {
-      if (options == null) {
-        options = {};
-      }
+      var _this = this;
+      if (options == null) options = {};
       this.handleSearchFormSubmit = __bind(this.handleSearchFormSubmit, this);
       this.setOptions(globalOptions);
       this.setOptions(options);
-      $(this.formSelector).submit(__bind(function(event) {
-        return this.handleSearchFormSubmit(event);
-      }, this));
+      $(this.formSelector).submit(function(event) {
+        return _this.handleSearchFormSubmit(event);
+      });
     }
+
     Search.prototype.searchTerm = function() {
       var q;
       q = $(this.searchTextInputSelector).val();
@@ -249,10 +294,14 @@
         return q;
       }
     };
+
     Search.prototype.handleSearchFormSubmit = function(event) {
       event.preventDefault();
       return $(this.listSelector).trigger(this.eventName);
     };
+
     return Search;
-  })();
+
+  })(Utilities);
+
 }).call(this);
