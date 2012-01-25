@@ -73,7 +73,9 @@
           page: params != null ? params.page : void 0
         });
       });
-      if (this.filters.useCookies) cookie = jQuery.cookie(this.filters.cookieName);
+      if (jQuery.cookie && this.filters.useCookies) {
+        cookie = jQuery.cookie(this.filters.cookieName);
+      }
       if (this.filters.useCookies && cookie) {
         presets = JSON.parse(cookie);
       } else {
@@ -119,8 +121,8 @@
       };
       if (jQuery.isEmptyObject(options.presets)) {
         params.filters = this.selections();
-        if (!jQuery.isEmptyObject(this.selections())) {
-          jQuery.cookie(this.filters.cookieName, JSON.stringify(this.selections()));
+        if (jQuery.cookie && !jQuery.isEmptyObject(params.filters)) {
+          jQuery.cookie(this.filters.cookieName, JSON.stringify(params.filters));
         }
       } else {
         params.filters = options.presets;
@@ -191,7 +193,7 @@
 
     Filters.prototype.render = function(data) {
       $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
-      if (this.noFiltersSelected(data) && data.patients.length > 0) {
+      if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
         return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
       }
     };

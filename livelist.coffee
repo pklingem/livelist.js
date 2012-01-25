@@ -36,7 +36,7 @@ class window.List extends Utilities
 
     $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
 
-    cookie = jQuery.cookie(@filters.cookieName) if @filters.useCookies
+    cookie = jQuery.cookie(@filters.cookieName) if jQuery.cookie && @filters.useCookies
     if @filters.useCookies && cookie
       presets = JSON.parse(cookie)
     else
@@ -65,8 +65,8 @@ class window.List extends Utilities
 
     if jQuery.isEmptyObject(options.presets)
       params.filters = @selections()
-      unless jQuery.isEmptyObject(@selections())
-        jQuery.cookie(@filters.cookieName, JSON.stringify(@selections()))
+      if jQuery.cookie && not jQuery.isEmptyObject(params.filters)
+        jQuery.cookie(@filters.cookieName, JSON.stringify(params.filters))
     else
       params.filters = options.presets
 
@@ -137,7 +137,7 @@ class window.Filters extends Utilities
 
   render: (data) ->
     $(@renderTo).html( Mustache.to_html(@filtersTemplate, data) )
-    if @noFiltersSelected(data) && data.patients.length > 0
+    if @noFiltersSelected(data) && data[@resourceName].length > 0
       $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
 
 
