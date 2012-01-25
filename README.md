@@ -123,3 +123,7 @@ current_page in the JSON response.
 * Calculate slug and value for filter options from the option name if
 either aren't provided.
 * Make template engine plugable (hogan.js, etc. rather than mustache)
+* Let the server tell us which filters are available (i.e. don't hardcode
+the filters in javascript)
+* Default to post to filters action to eliminate issues with URI string
+limits
