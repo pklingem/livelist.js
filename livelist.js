@@ -51,7 +51,7 @@
     __extends(List, _super);
 
     function List(search, filters, pagination, globalOptions, options) {
-      var cookie, presets,
+      var presets,
         _this = this;
       if (options == null) options = {};
       this.renderIndex = __bind(this.renderIndex, this);
@@ -73,14 +73,7 @@
           page: params != null ? params.page : void 0
         });
       });
-      if (jQuery.cookie && this.filters.useCookies) {
-        cookie = jQuery.cookie(this.filters.cookieName);
-      }
-      if (this.filters.useCookies && cookie) {
-        presets = JSON.parse(cookie);
-      } else {
-        presets = this.filters.presets;
-      }
+      presets = this.filters.presets();
       this.fetch({
         presets: presets
       });
@@ -98,35 +91,14 @@
       this.data = data;
       this.render();
       this.pagination.render(this.data);
-      this.filters.filters = _.pluck(this.data.filters, 'filter_slug');
       return this.filters.render(this.data);
-    };
-
-    List.prototype.selections = function() {
-      var filters,
-        _this = this;
-      filters = {};
-      _.each(this.filters.filters, function(filter) {
-        return filters[filter] = _this.filters.filterSelections(filter);
-      });
-      return filters;
     };
 
     List.prototype.fetch = function(options) {
       var params, searchTerm;
       if (this.fetchRequest) this.fetchRequest.abort();
       searchTerm = this.search.searchTerm();
-      params = {
-        filters: {}
-      };
-      if (jQuery.isEmptyObject(options.presets)) {
-        params.filters = this.selections();
-        if (jQuery.cookie && !jQuery.isEmptyObject(params.filters)) {
-          jQuery.cookie(this.filters.cookieName, JSON.stringify(params.filters));
-        }
-      } else {
-        params.filters = options.presets;
-      }
+      params = this.filters.setPresets(options.presets);
       if (searchTerm) params.q = searchTerm;
       if (options.page) params.page = options.page;
       return this.fetchRequest = $.ajax({
@@ -173,14 +145,48 @@
       $(this.advancedOptionsToggleSelector).click(this.handleAdvancedOptionsClick);
     }
 
-    Filters.prototype.filtersTemplate = '{{#filters}}\n<div class=\'filter\'>\n  <h3>\n    {{name}}\n  </h3>\n  <ul id=\'{{filter_slug}}_filter_options\'>\n    {{#options}}\n    <label>\n      <li>\n        <input {{#selected}}checked=\'checked\'{{/selected}}\n               class=\'left filter_option\'\n               id=\'filter_{{slug}}\'\n               name=\'filters[]\'\n               type=\'checkbox\'\n               value=\'{{value}}\' />\n        <div class=\'left filter_name\'>{{name}}</div>\n        <div class=\'right filter_count\'>{{count}}</div>\n        <div class=\'clear\'></div>\n      </li>\n    </label>\n    {{/options}}\n  </ul>\n</div>\n{{/filters}}';
-
-    Filters.prototype.filterValues = function(filter) {
-      return _.pluck($("." + filter + "_filter_input"), 'value');
+    Filters.prototype.presets = function() {
+      var cookie;
+      if (jQuery.cookie && this.useCookies) {
+        cookie = jQuery.cookie(this.cookieName);
+      }
+      if (this.useCookies && cookie) {
+        return JSON.parse(cookie);
+      } else {
+        return this.presets;
+      }
     };
 
-    Filters.prototype.filterSelections = function(filter) {
-      return _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
+    Filters.prototype.setPresets = function(presets) {
+      var params;
+      params = {
+        filters: {}
+      };
+      if (jQuery.isEmptyObject(presets)) {
+        params.filters = this.selections();
+        if (jQuery.cookie) this.setCookie();
+      } else {
+        params.filters = presets;
+      }
+      return params;
+    };
+
+    Filters.prototype.setCookie = function(params_filters) {
+      if (!jQuery.isEmptyObject(params_filters)) {
+        return jQuery.cookie(this.cookieName, JSON.stringify(params_filters));
+      }
+    };
+
+    Filters.prototype.template = '{{#filters}}\n<div class=\'filter\'>\n  <h3>\n    {{name}}\n  </h3>\n  <ul id=\'{{filter_slug}}_filter_options\'>\n    {{#options}}\n    <label>\n      <li>\n        <input {{#selected}}checked=\'checked\'{{/selected}}\n               class=\'left filter_option\'\n               id=\'filter_{{slug}}\'\n               name=\'filters[]\'\n               type=\'checkbox\'\n               value=\'{{value}}\' />\n        <div class=\'left filter_name\'>{{name}}</div>\n        <div class=\'right filter_count\'>{{count}}</div>\n        <div class=\'clear\'></div>\n      </li>\n    </label>\n    {{/options}}\n  </ul>\n</div>\n{{/filters}}';
+
+    Filters.prototype.selections = function() {
+      var filters,
+        _this = this;
+      filters = {};
+      _.each(this.filters, function(filter) {
+        return filters[filter] = _.pluck($("#" + filter + "_filter_options input.filter_option:checked"), 'value');
+      });
+      return filters;
     };
 
     Filters.prototype.noFiltersSelected = function(data) {
@@ -192,7 +198,8 @@
     };
 
     Filters.prototype.render = function(data) {
-      $(this.renderTo).html(Mustache.to_html(this.filtersTemplate, data));
+      this.filters = _.pluck(data.filters, 'filter_slug');
+      $(this.renderTo).html(Mustache.to_html(this.template, data));
       if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
         return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
       }

@@ -36,11 +36,7 @@ class window.List extends Utilities
 
     $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
 
-    cookie = jQuery.cookie(@filters.cookieName) if jQuery.cookie && @filters.useCookies
-    if @filters.useCookies && cookie
-      presets = JSON.parse(cookie)
-    else
-      presets = @filters.presets
+    presets = @filters.presets()
     @fetch(presets: presets)
 
   displayFetchingIndication: => $(@renderTo).addClass(@fetchingIndicationClass)
@@ -50,7 +46,6 @@ class window.List extends Utilities
     @data = data
     @render()
     @pagination.render(@data)
-    @filters.filters = _.pluck( @data.filters, 'filter_slug' )
     @filters.render(@data)
 
   fetch: (options) ->
@@ -61,12 +56,12 @@ class window.List extends Utilities
     if searchTerm then params.q = searchTerm
     if options.page then params.page = options.page
     @fetchRequest = $.ajax(
-      url: @urlPrefix
-      dataType: 'json'
-      data: params
-      type: @httpMethod
-      beforeSend: @displayFetchingIndication
-      success: @renderIndex
+      url        : @urlPrefix
+      dataType   : 'json'
+      data       : params
+      type       : @httpMethod
+      beforeSend : @displayFetchingIndication
+      success    : @renderIndex
     )
 
   render: ->
@@ -85,6 +80,13 @@ class window.Filters extends Utilities
     @setOptions(options)
     $('input.filter_option', @renderTo).live( 'change', => $(@listSelector).trigger(@eventName) )
     $(@advancedOptionsToggleSelector).click(@handleAdvancedOptionsClick)
+
+  presets: ->
+    cookie = jQuery.cookie(@cookieName) if jQuery.cookie && @useCookies
+    if @useCookies && cookie
+      JSON.parse(cookie)
+    else
+      @presets
 
   setPresets: (presets) ->
     params = { filters: {} }
@@ -143,6 +145,7 @@ class window.Filters extends Utilities
     )
 
   render: (data) ->
+    @filters = _.pluck( data.filters, 'filter_slug' )
     $(@renderTo).html( Mustache.to_html(@template, data) )
     if @noFiltersSelected(data) && data[@resourceName].length > 0
       $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
