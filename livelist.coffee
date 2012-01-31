@@ -53,22 +53,10 @@ class window.List extends Utilities
     @filters.filters = _.pluck( @data.filters, 'filter_slug' )
     @filters.render(@data)
 
-  selections: ->
-    filters = {}
-    _.each( @filters.filters, (filter) => filters[filter] = @filters.filterSelections( filter ) )
-    filters
-
   fetch: (options) ->
     @fetchRequest.abort() if @fetchRequest
     searchTerm = @search.searchTerm()
-    params = { filters: {} }
-
-    if jQuery.isEmptyObject(options.presets)
-      params.filters = @selections()
-      if jQuery.cookie && not jQuery.isEmptyObject(params.filters)
-        jQuery.cookie(@filters.cookieName, JSON.stringify(params.filters))
-    else
-      params.filters = options.presets
+    params = @filters.setPresets(options.presets)
 
     if searchTerm then params.q = searchTerm
     if options.page then params.page = options.page
@@ -98,7 +86,22 @@ class window.Filters extends Utilities
     $('input.filter_option', @renderTo).live( 'change', => $(@listSelector).trigger(@eventName) )
     $(@advancedOptionsToggleSelector).click(@handleAdvancedOptionsClick)
 
-  filtersTemplate: '''
+  setPresets: (presets) ->
+    params = { filters: {} }
+
+    if jQuery.isEmptyObject(presets)
+      params.filters = @selections()
+      @setCookie() if jQuery.cookie
+    else
+      params.filters = presets
+
+    params
+
+  setCookie: (params_filters) ->
+    if not jQuery.isEmptyObject(params_filters)
+      jQuery.cookie(@cookieName, JSON.stringify(params_filters))
+
+  template: '''
     {{#filters}}
     <div class='filter'>
       <h3>
@@ -125,8 +128,12 @@ class window.Filters extends Utilities
     {{/filters}}
   '''
 
-  filterValues:     (filter) -> _.pluck( $(".#{filter}_filter_input"), 'value' )
-  filterSelections: (filter) -> _.pluck( $("##{filter}_filter_options input.filter_option:checked"), 'value' )
+  selections: ->
+    filters = {}
+    _.each( @filters, (filter) =>
+      filters[filter] = _.pluck( $("##{filter}_filter_options input.filter_option:checked"), 'value' )
+    )
+    filters
 
   noFiltersSelected: (data) ->
     _.all( data.filters, (filter) ->
@@ -136,7 +143,7 @@ class window.Filters extends Utilities
     )
 
   render: (data) ->
-    $(@renderTo).html( Mustache.to_html(@filtersTemplate, data) )
+    $(@renderTo).html( Mustache.to_html(@template, data) )
     if @noFiltersSelected(data) && data[@resourceName].length > 0
       $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
 
