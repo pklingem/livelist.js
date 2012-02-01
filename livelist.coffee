@@ -51,23 +51,28 @@ class window.List extends Utilities
   fetch: (options) ->
     @fetchRequest.abort() if @fetchRequest
     searchTerm = @search.searchTerm()
-    params = @filters.setPresets(options.presets)
+    params = {}
+    params.filters = @filters.setPresets(options.presets)
 
-    if searchTerm then params.q = searchTerm
-    if options.page then params.page = options.page
+    if searchTerm
+      params.q = searchTerm
+    if options.page
+      params.page = options.page
+
     @fetchRequest = $.ajax(
-      url        : @urlPrefix
-      dataType   : 'json'
-      data       : params
-      type       : @httpMethod
-      beforeSend : @displayFetchingIndication
-      success    : @renderIndex
+      url         : @urlPrefix
+      dataType    : 'json'
+      data        : params
+      type        : @httpMethod
+      beforeSend  : @displayFetchingIndication
+      success     : @renderIndex
     )
 
   render: ->
     partials = {}
     partials[@resourceNameSingular] = @listItemTemplate
-    $(@renderTo).html( Mustache.to_html(@listTemplate, @data, partials) )
+    listHTML = Mustache.to_html(@listTemplate, @data, partials)
+    $(@renderTo).html( listHTML )
     @removeFetchingIndication()
 
 window.LiveList.version = '0.0.3'
@@ -76,10 +81,14 @@ class window.Filters extends Utilities
   constructor: (globalOptions, options = {}) ->
     @setOptions(globalOptions)
     @filters = if options.presets then _.keys(options.presets) else []
-    unless @filters.cookieName then @filters.cookieName = 'livelist_filter_presets'
+    @initializeCookies()
     @setOptions(options)
     $('input.filter_option', @renderTo).live( 'change', => $(@listSelector).trigger(@eventName) )
     $(@advancedOptionsToggleSelector).click(@handleAdvancedOptionsClick)
+
+  initializeCookies: ->
+    if jQuery.cookie && @useCookies && @cookieName
+      @cookieName = 'livelist_filter_presets'
 
   presets: ->
     cookie = jQuery.cookie(@cookieName) if jQuery.cookie && @useCookies
@@ -89,15 +98,13 @@ class window.Filters extends Utilities
       @presets
 
   setPresets: (presets) ->
-    params = { filters: {} }
-
+    filters = {}
     if jQuery.isEmptyObject(presets)
-      params.filters = @selections()
+      filters = @selections()
       @setCookie() if jQuery.cookie
     else
-      params.filters = presets
-
-    params
+      filters = presets
+    filters
 
   setCookie: (params_filters) ->
     if not jQuery.isEmptyObject(params_filters)
@@ -146,7 +153,8 @@ class window.Filters extends Utilities
 
   render: (data) ->
     @filters = _.pluck( data.filters, 'filter_slug' )
-    $(@renderTo).html( Mustache.to_html(@template, data) )
+    filtersHTML = Mustache.to_html(@template, data)
+    $(@renderTo).html( filtersHTML )
     if @noFiltersSelected(data) && data[@resourceName].length > 0
       $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
 
@@ -217,7 +225,8 @@ class window.Pagination extends Utilities
 
   render: (data) ->
     @pagination = @paginationJSON(data.pagination)
-    $(@renderTo).html( Mustache.to_html(@paginationTemplate, @pagination) )
+    paginationHTML = Mustache.to_html(@paginationTemplate, @pagination)
+    $(@renderTo).html( paginationHTML )
 
   handlePaginationLinkClick: (event) =>
     event.preventDefault()

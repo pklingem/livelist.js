@@ -98,7 +98,8 @@
       var params, searchTerm;
       if (this.fetchRequest) this.fetchRequest.abort();
       searchTerm = this.search.searchTerm();
-      params = this.filters.setPresets(options.presets);
+      params = {};
+      params.filters = this.filters.setPresets(options.presets);
       if (searchTerm) params.q = searchTerm;
       if (options.page) params.page = options.page;
       return this.fetchRequest = $.ajax({
@@ -112,10 +113,11 @@
     };
 
     List.prototype.render = function() {
-      var partials;
+      var listHTML, partials;
       partials = {};
       partials[this.resourceNameSingular] = this.listItemTemplate;
-      $(this.renderTo).html(Mustache.to_html(this.listTemplate, this.data, partials));
+      listHTML = Mustache.to_html(this.listTemplate, this.data, partials);
+      $(this.renderTo).html(listHTML);
       return this.removeFetchingIndication();
     };
 
@@ -135,15 +137,19 @@
       this.handleAdvancedOptionsClick = __bind(this.handleAdvancedOptionsClick, this);
       this.setOptions(globalOptions);
       this.filters = options.presets ? _.keys(options.presets) : [];
-      if (!this.filters.cookieName) {
-        this.filters.cookieName = 'livelist_filter_presets';
-      }
+      this.initializeCookies();
       this.setOptions(options);
       $('input.filter_option', this.renderTo).live('change', function() {
         return $(_this.listSelector).trigger(_this.eventName);
       });
       $(this.advancedOptionsToggleSelector).click(this.handleAdvancedOptionsClick);
     }
+
+    Filters.prototype.initializeCookies = function() {
+      if (jQuery.cookie && this.useCookies && this.cookieName) {
+        return this.cookieName = 'livelist_filter_presets';
+      }
+    };
 
     Filters.prototype.presets = function() {
       var cookie;
@@ -158,17 +164,15 @@
     };
 
     Filters.prototype.setPresets = function(presets) {
-      var params;
-      params = {
-        filters: {}
-      };
+      var filters;
+      filters = {};
       if (jQuery.isEmptyObject(presets)) {
-        params.filters = this.selections();
+        filters = this.selections();
         if (jQuery.cookie) this.setCookie();
       } else {
-        params.filters = presets;
+        filters = presets;
       }
-      return params;
+      return filters;
     };
 
     Filters.prototype.setCookie = function(params_filters) {
@@ -198,8 +202,10 @@
     };
 
     Filters.prototype.render = function(data) {
+      var filtersHTML;
       this.filters = _.pluck(data.filters, 'filter_slug');
-      $(this.renderTo).html(Mustache.to_html(this.template, data));
+      filtersHTML = Mustache.to_html(this.template, data);
+      $(this.renderTo).html(filtersHTML);
       if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
         return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
       }
@@ -264,8 +270,10 @@
     };
 
     Pagination.prototype.render = function(data) {
+      var paginationHTML;
       this.pagination = this.paginationJSON(data.pagination);
-      return $(this.renderTo).html(Mustache.to_html(this.paginationTemplate, this.pagination));
+      paginationHTML = Mustache.to_html(this.paginationTemplate, this.pagination);
+      return $(this.renderTo).html(paginationHTML);
     };
 
     Pagination.prototype.handlePaginationLinkClick = function(event) {
