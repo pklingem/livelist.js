@@ -172,33 +172,31 @@ class window.Pagination extends Utilities
     @emptyListMessage = "<p>No #{@resourceName} matched your filter criteria</p>"
     @setOptions(options)
 
-    $("#{@renderTo} a").live('click', @handlePaginationLinkClick)
+    $("#{@renderTo} a").live( 'click', (event) -> event.preventDefault() )
+    $("#{@renderTo} li:not(.disabled) a").live('click', @handlePaginationLinkClick)
 
-  paginationTemplate: '''
+  template: '''
     {{#isEmpty}}
       {{{emptyListMessage}}}
     {{/isEmpty}}
     {{^isEmpty}}
-    {{#previousPage}}
-      <a href='{{urlPrefix}}?page={{previousPage}}' data-page='{{previousPage}}'>← Previous</a>
-    {{/previousPage}}
-    {{^previousPage}}
-      <span>← Previous</span>
-    {{/previousPage}}
-    {{#pages}}
-      {{#currentPage}}
-        <span>{{page}}</span>
-      {{/currentPage}}
-      {{^currentPage}}
-        <a href='{{urlPrefix}}?page={{page}}' data-page='{{page}}'>{{page}}</a>
-      {{/currentPage}}
-    {{/pages}}
-    {{#nextPage}}
-      <a href='{{urlPrefix}}?page={{nextPage}}' data-page='{{nextPage}}'>Next →</a>
-    {{/nextPage}}
-    {{^nextPage}}
-      <span>Next →</span>
-    {{/nextPage}}
+    <div class="pagination">
+      <ul>
+        <li class="{{^previousPage}}disabled{{/previousPage}}">
+          <a href='{{urlPrefix}}?page={{previousPage}}' data-page='{{previousPage}}'>← Previous</a>
+        </li>
+
+        {{#pages}}
+          <li class="{{#currentPage}}active disabled{{/currentPage}}">
+            <a href='{{urlPrefix}}?page={{page}}' data-page='{{page}}'>{{page}}</a>
+          </li>
+        {{/pages}}
+
+        <li class="{{^nextPage}}disabled{{/nextPage}}">
+          <a href='{{urlPrefix}}?page={{nextPage}}' data-page='{{nextPage}}'>Next →</a>
+        </li>
+      </ul>
+    </div>
     {{/isEmpty}}
   '''
 
@@ -225,7 +223,7 @@ class window.Pagination extends Utilities
 
   render: (data) ->
     @pagination = @paginationJSON(data.pagination)
-    paginationHTML = Mustache.to_html(@paginationTemplate, @pagination)
+    paginationHTML = Mustache.to_html(@template, @pagination)
     $(@renderTo).html( paginationHTML )
 
   handlePaginationLinkClick: (event) =>

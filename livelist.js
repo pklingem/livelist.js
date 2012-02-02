@@ -232,10 +232,13 @@
       this.setOptions(globalOptions);
       this.emptyListMessage = "<p>No " + this.resourceName + " matched your filter criteria</p>";
       this.setOptions(options);
-      $("" + this.renderTo + " a").live('click', this.handlePaginationLinkClick);
+      $("" + this.renderTo + " a").live('click', function(event) {
+        return event.preventDefault();
+      });
+      $("" + this.renderTo + " li:not(.disabled) a").live('click', this.handlePaginationLinkClick);
     }
 
-    Pagination.prototype.paginationTemplate = '{{#isEmpty}}\n  {{{emptyListMessage}}}\n{{/isEmpty}}\n{{^isEmpty}}\n{{#previousPage}}\n  <a href=\'{{urlPrefix}}?page={{previousPage}}\' data-page=\'{{previousPage}}\'>← Previous</a>\n{{/previousPage}}\n{{^previousPage}}\n  <span>← Previous</span>\n{{/previousPage}}\n{{#pages}}\n  {{#currentPage}}\n    <span>{{page}}</span>\n  {{/currentPage}}\n  {{^currentPage}}\n    <a href=\'{{urlPrefix}}?page={{page}}\' data-page=\'{{page}}\'>{{page}}</a>\n  {{/currentPage}}\n{{/pages}}\n{{#nextPage}}\n  <a href=\'{{urlPrefix}}?page={{nextPage}}\' data-page=\'{{nextPage}}\'>Next →</a>\n{{/nextPage}}\n{{^nextPage}}\n  <span>Next →</span>\n{{/nextPage}}\n{{/isEmpty}}';
+    Pagination.prototype.template = '{{#isEmpty}}\n  {{{emptyListMessage}}}\n{{/isEmpty}}\n{{^isEmpty}}\n<div class="pagination">\n  <ul>\n    <li class="{{^previousPage}}disabled{{/previousPage}}">\n      <a href=\'{{urlPrefix}}?page={{previousPage}}\' data-page=\'{{previousPage}}\'>← Previous</a>\n    </li>\n\n    {{#pages}}\n      <li class="{{#currentPage}}active disabled{{/currentPage}}">\n        <a href=\'{{urlPrefix}}?page={{page}}\' data-page=\'{{page}}\'>{{page}}</a>\n      </li>\n    {{/pages}}\n\n    <li class="{{^nextPage}}disabled{{/nextPage}}">\n      <a href=\'{{urlPrefix}}?page={{nextPage}}\' data-page=\'{{nextPage}}\'>Next →</a>\n    </li>\n  </ul>\n</div>\n{{/isEmpty}}';
 
     Pagination.prototype.pagesJSON = function(currentPage, totalPages) {
       var firstPage, groupSize, lastPage, previousPage, _i, _results;
@@ -272,7 +275,7 @@
     Pagination.prototype.render = function(data) {
       var paginationHTML;
       this.pagination = this.paginationJSON(data.pagination);
-      paginationHTML = Mustache.to_html(this.paginationTemplate, this.pagination);
+      paginationHTML = Mustache.to_html(this.template, this.pagination);
       return $(this.renderTo).html(paginationHTML);
     };
 
