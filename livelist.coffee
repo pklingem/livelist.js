@@ -75,7 +75,7 @@ class window.List extends Utilities
     $(@renderTo).html( listHTML )
     @removeFetchingIndication()
 
-window.LiveList.version = '0.0.4'
+window.LiveList.version = '0.0.5'
 
 class window.Filters extends Utilities
   constructor: (globalOptions, options = {}) ->
