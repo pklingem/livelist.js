@@ -36,7 +36,7 @@ class window.List extends Utilities
 
     $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
 
-    presets = @filters.presets()
+    presets = @filters.getPresets()
     @fetch(presets: presets)
 
   displayFetchingIndication: => $(@renderTo).addClass(@fetchingIndicationClass)
@@ -90,7 +90,7 @@ class window.Filters extends Utilities
     if jQuery.cookie && @useCookies && @cookieName
       @cookieName = 'livelist_filter_presets'
 
-  presets: ->
+  getPresets: ->
     cookie = jQuery.cookie(@cookieName) if jQuery.cookie && @useCookies
     if @useCookies && cookie
       JSON.parse(cookie)
@@ -101,7 +101,7 @@ class window.Filters extends Utilities
     filters = {}
     if jQuery.isEmptyObject(presets)
       filters = @selections()
-      @setCookie() if jQuery.cookie
+      @setCookie(filters) if jQuery.cookie
     else
       filters = presets
     filters

@@ -73,7 +73,7 @@
           page: params != null ? params.page : void 0
         });
       });
-      presets = this.filters.presets();
+      presets = this.filters.getPresets();
       this.fetch({
         presets: presets
       });
@@ -151,7 +151,7 @@
       }
     };
 
-    Filters.prototype.presets = function() {
+    Filters.prototype.getPresets = function() {
       var cookie;
       if (jQuery.cookie && this.useCookies) {
         cookie = jQuery.cookie(this.cookieName);
@@ -168,7 +168,7 @@
       filters = {};
       if (jQuery.isEmptyObject(presets)) {
         filters = this.selections();
-        if (jQuery.cookie) this.setCookie();
+        if (jQuery.cookie) this.setCookie(filters);
       } else {
         filters = presets;
       }
