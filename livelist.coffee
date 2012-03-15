@@ -36,7 +36,7 @@ class window.List extends Utilities
 
     $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
 
-    presets = @filters.getPresets()
+    presets = @filters.presets()
     @fetch(presets: presets)
 
   displayFetchingIndication: => $(@renderTo).addClass(@fetchingIndicationClass)
@@ -90,7 +90,7 @@ class window.Filters extends Utilities
     if jQuery.cookie && @useCookies && @cookieName
       @cookieName = 'livelist_filter_presets'
 
-  getPresets: ->
+  presets: ->
     cookie = jQuery.cookie(@cookieName) if jQuery.cookie && @useCookies
     if @useCookies && cookie
       JSON.parse(cookie)
@@ -101,7 +101,7 @@ class window.Filters extends Utilities
     filters = {}
     if jQuery.isEmptyObject(presets)
       filters = @selections()
-      @setCookie(filters) if jQuery.cookie
+      @setCookie() if jQuery.cookie
     else
       filters = presets
     filters
@@ -215,13 +215,13 @@ class window.Pagination extends Utilities
   '''
 
   pagesJSON: (currentPage, totalPages) ->
-    groupSize = @maxPages / 2
-    firstPage = if currentPage < groupSize then 1 else currentPage - groupSize
+    groupSize = Math.floor(@maxPages / 2)
+    firstPage = if currentPage <= groupSize then 1 else currentPage - groupSize
     previousPage = firstPage + groupSize * 2 - 1
     lastPage  = if previousPage >= totalPages then totalPages else previousPage
     _.map([firstPage..lastPage], (page) ->
       page: page
-      currentPage: -> currentPage is page
+      currentPage: currentPage is page
     )
 
   paginationJSON: (pagination) ->
