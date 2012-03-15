@@ -201,9 +201,26 @@
       });
     };
 
+    Filters.prototype.sortOptions = function(filters) {
+      return _.map(filters, function(filter) {
+        filter.options = _.sortBy(filter.options, function(option) {
+          return option.name;
+        });
+        return filter;
+      });
+    };
+
+    Filters.prototype.sort = function(filters) {
+      return _.sortBy(filters, function(filter) {
+        return filter.name;
+      });
+    };
+
     Filters.prototype.render = function(data) {
       var filtersHTML;
       this.filters = _.pluck(data.filters, 'filter_slug');
+      this.sort(data.filters);
+      this.sortOptions(data.filters);
       filtersHTML = Mustache.to_html(this.template, data);
       $(this.renderTo).html(filtersHTML);
       if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
