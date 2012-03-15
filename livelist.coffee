@@ -151,8 +151,22 @@ class window.Filters extends Utilities
       )
     )
 
+  sortOptions: (filters) ->
+    _.map( filters, (filter) ->
+      filter.options = _.sortBy( filter.options, (option) -> option.name)
+      filter
+    )
+
+  sort: (filters) ->
+    _.sortBy( filters, (filter) -> filter.name )
+
   render: (data) ->
+    #What is this for?
     @filters = _.pluck( data.filters, 'filter_slug' )
+
+    @sort(data.filters)
+    @sortOptions(data.filters)
+
     filtersHTML = Mustache.to_html(@template, data)
     $(@renderTo).html( filtersHTML )
     if @noFiltersSelected(data) && data[@resourceName].length > 0
