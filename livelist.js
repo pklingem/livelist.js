@@ -259,8 +259,8 @@
 
     Pagination.prototype.pagesJSON = function(currentPage, totalPages) {
       var firstPage, groupSize, lastPage, previousPage, _i, _results;
-      groupSize = this.maxPages / 2;
-      firstPage = currentPage < groupSize ? 1 : currentPage - groupSize;
+      groupSize = Math.floor(this.maxPages / 2);
+      firstPage = currentPage <= groupSize ? 1 : currentPage - groupSize;
       previousPage = firstPage + groupSize * 2 - 1;
       lastPage = previousPage >= totalPages ? totalPages : previousPage;
       return _.map((function() {
@@ -270,9 +270,7 @@
       }).apply(this), function(page) {
         return {
           page: page,
-          currentPage: function() {
-            return currentPage === page;
-          }
+          currentPage: currentPage === page
         };
       });
     };
