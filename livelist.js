@@ -26,21 +26,16 @@
     __extends(LiveList, _super);
 
     function LiveList(options) {
-      this.globalOptions.listSelector = options.list.renderTo;
-      this.globalOptions.eventName = "livelist:" + options.global.resourceName;
-      this.globalOptions.urlPrefix = "/" + options.global.resourceName;
-      this.setOptions(options.global, this.globalOptions);
-      this.search = new Search(this.globalOptions, options.search);
-      this.filters = new Filters(this.globalOptions, options.filters);
-      this.pagination = new Pagination(this.globalOptions, options.pagination);
-      this.list = new List(this.search, this.filters, this.pagination, this.globalOptions, options.list);
+      this.listSelector = options.list.renderTo;
+      this.resourceName = options.global.resourceName;
+      this.resourceNameSingular = options.global.resourceNameSingular;
+      this.eventName = "livelist:" + this.resourceName;
+      this.urlPrefix = "/" + this.resourceName;
+      this.search = new Search(options.search, this);
+      this.filters = new Filters(options.filters, this);
+      this.pagination = new Pagination(options.pagination, this);
+      this.list = new List(options.list, this);
     }
-
-    LiveList.prototype.globalOptions = {
-      data: null,
-      resourceName: 'items',
-      resourceNameSingular: 'item'
-    };
 
     return LiveList;
 
@@ -50,32 +45,26 @@
 
     __extends(List, _super);
 
-    function List(search, filters, pagination, globalOptions, options) {
-      var presets,
-        _this = this;
-      if (options == null) options = {};
+    function List(options, livelist) {
       this.renderIndex = __bind(this.renderIndex, this);
       this.removeFetchingIndication = __bind(this.removeFetchingIndication, this);
       this.displayFetchingIndication = __bind(this.displayFetchingIndication, this);
-      this.data = globalOptions.data;
+      var _this = this;
       this.fetchRequest = null;
-      this.search = search;
-      this.filters = filters;
-      this.pagination = pagination;
-      this.setOptions(globalOptions);
-      this.listTemplate = "{{#" + this.resourceName + "}}{{>" + this.resourceNameSingular + "}}{{/" + this.resourceName + "}}";
+      this.livelist = livelist;
+      this.listTemplate = "{{#" + this.livelist.resourceName + "}}{{>" + this.livelist.resourceNameSingular + "}}{{/" + this.livelist.resourceName + "}}";
       this.listItemTemplate = '<li>{{id}}</li>';
       this.fetchingIndicationClass = 'updating';
+      this.renderTo = "ul#" + this.livelist.resourceName;
       this.setOptions(options);
-      $(this.renderTo).bind(this.eventName, function(event, params) {
+      $(this.renderTo).bind(this.livelist.eventName, function(event, params) {
         return _this.fetch({
           presets: null,
           page: params != null ? params.page : void 0
         });
       });
-      presets = this.filters.getPresets();
       this.fetch({
-        presets: presets
+        presets: this.livelist.filters.getPresets()
       });
     }
 
@@ -88,25 +77,25 @@
     };
 
     List.prototype.renderIndex = function(data, textStatus, jqXHR) {
-      this.data = data;
+      this.livelist.data = data;
       this.render();
-      this.pagination.render(this.data);
-      return this.filters.render(this.data);
+      this.livelist.pagination.render(this.livelist.data);
+      return this.livelist.filters.render(this.livelist.data);
     };
 
     List.prototype.fetch = function(options) {
       var params, searchTerm;
       if (this.fetchRequest) this.fetchRequest.abort();
-      searchTerm = this.search.searchTerm();
+      searchTerm = this.livelist.search.searchTerm();
       params = {};
-      params.filters = this.filters.setPresets(options.presets);
+      params.filters = this.livelist.filters.setPresets(options.presets);
       if (searchTerm) params.q = searchTerm;
       if (options.page) params.page = options.page;
       return this.fetchRequest = $.ajax({
-        url: this.urlPrefix,
+        url: this.livelist.urlPrefix,
+        type: this.livelist.httpMethod,
         dataType: 'json',
         data: params,
-        type: this.httpMethod,
         beforeSend: this.displayFetchingIndication,
         success: this.renderIndex
       });
@@ -115,8 +104,8 @@
     List.prototype.render = function() {
       var listHTML, partials;
       partials = {};
-      partials[this.resourceNameSingular] = this.listItemTemplate;
-      listHTML = Mustache.to_html(this.listTemplate, this.data, partials);
+      partials[this.livelist.resourceNameSingular] = this.listItemTemplate;
+      listHTML = Mustache.to_html(this.listTemplate, this.livelist.data, partials);
       $(this.renderTo).html(listHTML);
       return this.removeFetchingIndication();
     };
@@ -131,16 +120,15 @@
 
     __extends(Filters, _super);
 
-    function Filters(globalOptions, options) {
-      var _this = this;
-      if (options == null) options = {};
+    function Filters(options, livelist) {
       this.handleAdvancedOptionsClick = __bind(this.handleAdvancedOptionsClick, this);
-      this.setOptions(globalOptions);
+      var _this = this;
+      this.livelist = livelist;
       this.filters = options.presets ? _.keys(options.presets) : [];
       this.initializeCookies();
       this.setOptions(options);
       $('input.filter_option', this.renderTo).live('change', function() {
-        return $(_this.listSelector).trigger(_this.eventName);
+        return $(_this.livelist.listSelector).trigger(_this.livelist.eventName);
       });
       $(this.advancedOptionsToggleSelector).click(this.handleAdvancedOptionsClick);
     }
@@ -223,7 +211,7 @@
       this.sortOptions(data.filters);
       filtersHTML = Mustache.to_html(this.template, data);
       $(this.renderTo).html(filtersHTML);
-      if (this.noFiltersSelected(data) && data[this.resourceName].length > 0) {
+      if (this.noFiltersSelected(data) && data[this.livelist.resourceName].length > 0) {
         return $('input[type="checkbox"]', this.renderTo).attr('checked', 'checked');
       }
     };
@@ -241,13 +229,11 @@
 
     __extends(Pagination, _super);
 
-    function Pagination(globalOptions, options) {
-      if (options == null) options = {};
-      this.handlePaginationLinkClick = __bind(this.handlePaginationLinkClick, this);
+    function Pagination(options, livelist) {
+      this.handlePaginationLinkClick = __bind(this.handlePaginationLinkClick, this);      this.livelist = livelist;
       this.pagination = null;
       this.maxPages = 30;
-      this.setOptions(globalOptions);
-      this.emptyListMessage = "<p>No " + this.resourceName + " matched your filter criteria</p>";
+      this.emptyListMessage = "<p>No " + this.livelist.resourceName + " matched your filter criteria</p>";
       this.setOptions(options);
       $("" + this.renderTo + " a").live('click', function(event) {
         return event.preventDefault();
@@ -282,7 +268,7 @@
         currentPage: pagination.current_page,
         nextPage: pagination.next_page,
         previousPage: pagination.previous_page,
-        urlPrefix: this.urlPrefix,
+        urlPrefix: this.livelist.urlPrefix,
         pages: this.pagesJSON(pagination.current_page, pagination.total_pages)
       };
     };
@@ -296,7 +282,7 @@
 
     Pagination.prototype.handlePaginationLinkClick = function(event) {
       event.preventDefault();
-      return $(this.listSelector).trigger(this.eventName, {
+      return $(this.livelist.listSelector).trigger(this.livelist.eventName, {
         page: $(event.target).data('page')
       });
     };
@@ -309,11 +295,10 @@
 
     __extends(Search, _super);
 
-    function Search(globalOptions, options) {
-      var _this = this;
-      if (options == null) options = {};
+    function Search(options, livelist) {
       this.handleSearchFormSubmit = __bind(this.handleSearchFormSubmit, this);
-      this.setOptions(globalOptions);
+      var _this = this;
+      this.livelist = livelist;
       this.setOptions(options);
       $(this.formSelector).submit(function(event) {
         return _this.handleSearchFormSubmit(event);
@@ -332,7 +317,7 @@
 
     Search.prototype.handleSearchFormSubmit = function(event) {
       event.preventDefault();
-      return $(this.listSelector).trigger(this.eventName);
+      return $(this.livelist.listSelector).trigger(this.livelist.eventName);
     };
 
     return Search;

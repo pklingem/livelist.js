@@ -4,55 +4,45 @@ class window.Utilities
 
 class window.LiveList extends Utilities
   constructor: (options) ->
-    @globalOptions.listSelector = options.list.renderTo
-    @globalOptions.eventName    = "livelist:#{options.global.resourceName}"
-    @globalOptions.urlPrefix    = "/#{options.global.resourceName}"
-
-    @setOptions(options.global, @globalOptions)
-
-    @search     = new Search(@globalOptions, options.search)
-    @filters    = new Filters(@globalOptions, options.filters)
-    @pagination = new Pagination(@globalOptions, options.pagination)
-    @list       = new List(@search, @filters, @pagination, @globalOptions, options.list)
-
-  globalOptions:
-    data: null
-    resourceName: 'items'
-    resourceNameSingular: 'item'
+    @listSelector         = options.list.renderTo
+    @resourceName         = options.global.resourceName
+    @resourceNameSingular = options.global.resourceNameSingular
+    @eventName            = "livelist:#{@resourceName}"
+    @urlPrefix            = "/#{@resourceName}"
+    @search               = new Search(options.search, @)
+    @filters              = new Filters(options.filters, @)
+    @pagination           = new Pagination(options.pagination, @)
+    @list                 = new List(options.list, @)
 
 class window.List extends Utilities
-  constructor: (search, filters, pagination, globalOptions, options = {}) ->
-    @data         = globalOptions.data
+  constructor: (options, livelist) ->
     @fetchRequest = null
-    @search       = search
-    @filters      = filters
-    @pagination   = pagination
+    @livelist     = livelist
 
-    @setOptions(globalOptions)
-    @listTemplate            = "{{##{@resourceName}}}{{>#{@resourceNameSingular}}}{{/#{@resourceName}}}"
+    @listTemplate            = "{{##{@livelist.resourceName}}}{{>#{@livelist.resourceNameSingular}}}{{/#{@livelist.resourceName}}}"
     @listItemTemplate        = '<li>{{id}}</li>'
     @fetchingIndicationClass = 'updating'
+    @renderTo                = "ul##{@livelist.resourceName}"
+
     @setOptions(options)
 
-    $(@renderTo).bind(@eventName, (event, params) => @fetch(presets: null, page: params?.page))
-
-    presets = @filters.getPresets()
-    @fetch(presets: presets)
+    $(@renderTo).bind(@livelist.eventName, (event, params) => @fetch(presets: null, page: params?.page))
+    @fetch(presets: @livelist.filters.getPresets())
 
   displayFetchingIndication: => $(@renderTo).addClass(@fetchingIndicationClass)
   removeFetchingIndication:  => $(@renderTo).removeClass(@fetchingIndicationClass)
 
   renderIndex: (data, textStatus, jqXHR) =>
-    @data = data
+    @livelist.data = data
     @render()
-    @pagination.render(@data)
-    @filters.render(@data)
+    @livelist.pagination.render(@livelist.data)
+    @livelist.filters.render(@livelist.data)
 
   fetch: (options) ->
     @fetchRequest.abort() if @fetchRequest
-    searchTerm = @search.searchTerm()
+    searchTerm = @livelist.search.searchTerm()
     params = {}
-    params.filters = @filters.setPresets(options.presets)
+    params.filters = @livelist.filters.setPresets(options.presets)
 
     if searchTerm
       params.q = searchTerm
@@ -60,30 +50,31 @@ class window.List extends Utilities
       params.page = options.page
 
     @fetchRequest = $.ajax(
-      url         : @urlPrefix
+      url         : @livelist.urlPrefix
+      type        : @livelist.httpMethod
       dataType    : 'json'
       data        : params
-      type        : @httpMethod
       beforeSend  : @displayFetchingIndication
       success     : @renderIndex
     )
 
   render: ->
     partials = {}
-    partials[@resourceNameSingular] = @listItemTemplate
-    listHTML = Mustache.to_html(@listTemplate, @data, partials)
+    partials[@livelist.resourceNameSingular] = @listItemTemplate
+    listHTML = Mustache.to_html(@listTemplate, @livelist.data, partials)
     $(@renderTo).html( listHTML )
     @removeFetchingIndication()
 
 window.LiveList.version = '0.0.5'
 
 class window.Filters extends Utilities
-  constructor: (globalOptions, options = {}) ->
-    @setOptions(globalOptions)
+  constructor: (options, livelist) ->
+    @livelist = livelist
     @filters = if options.presets then _.keys(options.presets) else []
     @initializeCookies()
     @setOptions(options)
-    $('input.filter_option', @renderTo).live( 'change', => $(@listSelector).trigger(@eventName) )
+
+    $('input.filter_option', @renderTo).live( 'change', => $(@livelist.listSelector).trigger(@livelist.eventName) )
     $(@advancedOptionsToggleSelector).click(@handleAdvancedOptionsClick)
 
   initializeCookies: ->
@@ -169,7 +160,7 @@ class window.Filters extends Utilities
 
     filtersHTML = Mustache.to_html(@template, data)
     $(@renderTo).html( filtersHTML )
-    if @noFiltersSelected(data) && data[@resourceName].length > 0
+    if @noFiltersSelected(data) && data[@livelist.resourceName].length > 0
       $('input[type="checkbox"]', @renderTo).attr('checked', 'checked')
 
 
@@ -178,12 +169,12 @@ class window.Filters extends Utilities
     $(@renderTo).slideToggle()
 
 class window.Pagination extends Utilities
-  constructor: (globalOptions, options = {}) ->
+  constructor: (options, livelist) ->
+    @livelist = livelist
     @pagination = null
     @maxPages   = 30
 
-    @setOptions(globalOptions)
-    @emptyListMessage = "<p>No #{@resourceName} matched your filter criteria</p>"
+    @emptyListMessage = "<p>No #{@livelist.resourceName} matched your filter criteria</p>"
     @setOptions(options)
 
     $("#{@renderTo} a").live( 'click', (event) -> event.preventDefault() )
@@ -231,7 +222,7 @@ class window.Pagination extends Utilities
       currentPage      : pagination.current_page
       nextPage         : pagination.next_page
       previousPage     : pagination.previous_page
-      urlPrefix        : @urlPrefix
+      urlPrefix        : @livelist.urlPrefix
       pages            : @pagesJSON(pagination.current_page, pagination.total_pages)
     }
 
@@ -242,11 +233,11 @@ class window.Pagination extends Utilities
 
   handlePaginationLinkClick: (event) =>
     event.preventDefault()
-    $(@listSelector).trigger(@eventName, {page: $(event.target).data('page')})
+    $(@livelist.listSelector).trigger(@livelist.eventName, {page: $(event.target).data('page')})
 
 class window.Search extends Utilities
-  constructor: (globalOptions, options = {}) ->
-    @setOptions(globalOptions)
+  constructor: (options, livelist) ->
+    @livelist = livelist
     @setOptions(options)
     $(@formSelector).submit( (event) => @handleSearchFormSubmit(event) )
 
@@ -256,4 +247,4 @@ class window.Search extends Utilities
 
   handleSearchFormSubmit: (event) =>
     event.preventDefault()
-    $(@listSelector).trigger(@eventName)
+    $(@livelist.listSelector).trigger(@livelist.eventName)
