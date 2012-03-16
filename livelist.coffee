@@ -215,13 +215,13 @@ class window.Pagination extends Utilities
   '''
 
   pagesJSON: (currentPage, totalPages) ->
-    groupSize = @maxPages / 2
-    firstPage = if currentPage < groupSize then 1 else currentPage - groupSize
+    groupSize = Math.floor(@maxPages / 2)
+    firstPage = if currentPage <= groupSize then 1 else currentPage - groupSize
     previousPage = firstPage + groupSize * 2 - 1
     lastPage  = if previousPage >= totalPages then totalPages else previousPage
     _.map([firstPage..lastPage], (page) ->
       page: page
-      currentPage: -> currentPage is page
+      currentPage: currentPage is page
     )
 
   paginationJSON: (pagination) ->
