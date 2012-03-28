@@ -114,7 +114,7 @@
 
   })(Utilities);
 
-  window.LiveList.version = '0.0.5';
+  window.LiveList.version = '0.0.6';
 
   window.Filters = (function(_super) {
 
