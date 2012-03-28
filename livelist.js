@@ -29,8 +29,9 @@
       this.listSelector = options.list.renderTo;
       this.resourceName = options.global.resourceName;
       this.resourceNameSingular = options.global.resourceNameSingular;
+      this.urlPrefix = options.global.urlPrefix || ("/" + this.resourceName);
+      this.httpMethod = options.global.httpMethod || 'get';
       this.eventName = "livelist:" + this.resourceName;
-      this.urlPrefix = "/" + this.resourceName;
       this.search = new Search(options.search, this);
       this.filters = new Filters(options.filters, this);
       this.pagination = new Pagination(options.pagination, this);
@@ -114,7 +115,7 @@
 
   })(Utilities);
 
-  window.LiveList.version = '0.0.6';
+  window.LiveList.version = '0.0.7';
 
   window.Filters = (function(_super) {
 

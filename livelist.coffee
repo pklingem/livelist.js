@@ -1,5 +1,5 @@
 class window.Utilities
-  setOptions: (options, context=@) =>
+  setOptions: (options, context = @) =>
     _.each( options, (value, option) => context[option] = value )
 
 class window.LiveList extends Utilities
@@ -7,8 +7,9 @@ class window.LiveList extends Utilities
     @listSelector         = options.list.renderTo
     @resourceName         = options.global.resourceName
     @resourceNameSingular = options.global.resourceNameSingular
+    @urlPrefix            = options.global.urlPrefix || "/#{@resourceName}"
+    @httpMethod           = options.global.httpMethod || 'get'
     @eventName            = "livelist:#{@resourceName}"
-    @urlPrefix            = "/#{@resourceName}"
     @search               = new Search(options.search, @)
     @filters              = new Filters(options.filters, @)
     @pagination           = new Pagination(options.pagination, @)
@@ -65,7 +66,7 @@ class window.List extends Utilities
     $(@renderTo).html( listHTML )
     @removeFetchingIndication()
 
-window.LiveList.version = '0.0.6'
+window.LiveList.version = '0.0.7'
 
 class window.Filters extends Utilities
   constructor: (options, livelist) ->
