@@ -3,6 +3,11 @@
 fs      = require 'fs'
 {exec}  = require 'child_process'
 
+task 'compile', 'build, concat, minify', ->
+  invoke 'build'
+  invoke 'concat'
+  invoke 'minify'
+
 task 'build', 'Build lib/ from src/', ->
   coffee = spawn 'coffee', ['-c', '--bare', '-o', 'lib', 'src']
   coffee.stdout.on 'data', (data) -> print data.toString()
