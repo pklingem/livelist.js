@@ -1,1 +1,1 @@
-window.LiveList.version = '0.0.8'
+window.LiveList.version = '0.0.9'
