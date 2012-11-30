@@ -1,0 +1,14 @@
+{
+   "name": "livelist",
+   "version": "0.0.5",
+   "author": "Patrick Klingemann <patrick.klingemann@gmail.com>",
+   "description": "An intelligent, prompt, dynamic HTML list implementation",
+   "repository": {
+     "type": "git",
+     "url": "https://github.com/pklingem/livelist.js"
+   },
+   "dependencies": {
+     "coffee-script": "*",
+     "uglify-js": "*"
+   }
+}
