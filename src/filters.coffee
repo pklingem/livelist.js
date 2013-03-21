@@ -74,8 +74,8 @@ class window.Filters extends Utilities
     )
 
   sortOptions: (filters) ->
-    _.map( filters, (filter) ->
-      filter.options = _.sortBy( filter.options, (option) -> option.name)
+    _.map( filters, (filter) =>
+      filter.options = _.sortBy( filter.options, (option) => option[@sortOptionsProperty])
       filter
     )
 
