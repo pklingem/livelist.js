@@ -228,7 +228,7 @@ window.Filters = (function(_super) {
     var _this = this;
     return _.map(filters, function(filter) {
       filter.options = _.sortBy(filter.options, function(option) {
-        return option[_this.sortOptionsProperty];
+        return option[_this.optionsSortProperties[filter.filter_slug]];
       });
       return filter;
     });
